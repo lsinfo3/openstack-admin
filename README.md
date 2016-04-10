@@ -11,6 +11,7 @@ The scripts require Python and some additional libraries. It is recommend to run
 ```
 sudo apt-get update
 sudo apt-get install -y git
+sudo apt-get install -y jq
 sudo apt-get install -y python-dev python-pip
 sudo pip install virtualenv
 git clone https://github.com/lsinfo3/openstack-admin.git
