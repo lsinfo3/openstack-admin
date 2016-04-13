@@ -59,7 +59,6 @@ export OS_AUTH_URL='https://ls3cloud1.informatik.uni-wuerzburg.de:5000/v3/'
 export OS_AUTH_STRATEGY='keystone'
 export OS_REGION_NAME='RegionOne'
 export OS_CACERT='ls3cloud1.pem'
-
 export CINDER_ENDPOINT_TYPE='public'
 export GLANCE_ENDPOINT_TYPE='public'
 export KEYSTONE_ENDPOINT_TYPE='public'
@@ -68,10 +67,6 @@ export NEUTRON_ENDPOINT_TYPE='public'
 export OS_ENDPOINT_TYPE='public'
 export OS_INTERFACE='public'
 export MURANO_REPO_URL='http://storage.apps.openstack.org/'
-export OS_CACERT='ls3cloud1.pem'
-
-# overwrite openstack
-#alias openstack="openstack --insecure"
 
 # this is required to export aliases for other scripts
 shopt -s expand_aliases
