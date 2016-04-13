@@ -1,0 +1,84 @@
+#!/bin/bash
+
+# Check for existing authentication
+if [ -z ${OS_AUTH_URL+1} ]; then 
+  echo "No authentication is set. Have you called 'source os-auth' before?";
+  echo "Exiting."
+  exit 1 
+fi
+
+# Parse parameters
+for i in "$@"
+do
+case $i in
+  --project=*)
+  INPUT_PROJECTNAME="${i#*=}"
+  shift
+  ;;
+  --no-default-firewall*)
+  INPUT_NO_DEFAULT_FIREWALL=1
+  shift
+  ;;
+  --help*)
+  PRINT_USAGE=1
+  shift
+  ;;
+  *)
+  PRINT_USAGE=1;
+  echo "error: unknown option ${i#*}"
+  ;;
+esac
+done
+
+# Print usage
+if [ ! -z ${PRINT_USAGE+1} ]; then
+  echo -e "\nUsage: './os-project-create' with the following parameters:"
+  echo -e "\n --project"
+  echo -e "\tThe desired project name. Please respect the following naming conventions for new projects:"
+  echo -e "\t * User related projects: user-firstname.lastname"
+  echo -e "\t * Shared projects: shared-myproject"
+  echo -e "\n --no-default-firewall (optional)"
+  echo -e "\tPer default this script will enable all ICMP, TCP and UDP traffic to the virtual instances\n\tof this project. With this parameter the security rules will leaved untouched to deny all\n\ttraffic per default."
+  echo
+  exit 1
+fi
+
+# Project name dialog
+if [ -z ${INPUT_PROJECTNAME+1} ]; then
+  echo -n "Enter new project name: "
+  read INPUT_PROJECTNAME
+fi
+
+# Check for project name prefix
+if [[ $INPUT_PROJECTNAME != user-* ]] && [[ $INPUT_PROJECTNAME != shared-* ]]; then
+  echo "It is required that your project name starts with 'user-' or 'shared-'."
+  echo "Run './os-project-create --help' for additional information."
+  exit 1
+fi
+
+# Create project by calling the OpenStack API
+PROJECT=`openstack project create --domain $OS_PROJECT_DOMAIN_NAME --format json $INPUT_PROJECTNAME`
+if [ $? -eq 0 ]; then
+  echo -e "[OK]: Project '$INPUT_PROJECTNAME' successfully created."
+else
+  echo -e "[ERROR]: Project '$INPUT_PROJECTNAME' could not be created."
+  exit 1
+fi
+#echo $PROJECT
+
+# export created project as default project for following commands
+export OS_PROJECT_NAME=$INPUT_PROJECTNAME
+
+
+if [ -z ${INPUT_NO_DEFAULT_FIREWALL+1} ]; then
+  # read id from default security group and add some rules
+  DEFAULT_SECURITY_GROUP_ID=`openstack security group list --format json | jq --raw-output '.[] | select(.Name=="default") | .["ID"]'`
+  openstack security group rule create --proto icmp --src-ip 0.0.0.0/0 --dst-port 0 $DEFAULT_SECURITY_GROUP_ID
+  openstack security group rule create --proto tcp --src-ip 0.0.0.0/0 --dst-port 0 $DEFAULT_SECURITY_GROUP_ID
+  openstack security group rule create --proto udp --src-ip 0.0.0.0/0 --dst-port 0 $DEFAULT_SECURITY_GROUP_ID
+  echo -e "[OK]: Firewall rules to allow all ICMP, TCP and UDP traffic successfully created."
+fi
+
+echo
+
+exit 0
