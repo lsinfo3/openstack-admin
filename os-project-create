@@ -66,6 +66,9 @@ else
 fi
 #echo $PROJECT
 
+# grant access to newly created project for current user
+./os-project-grant-access --user=$OS_USERNAME --project=$INPUT_PROJECTNAME
+
 # export created project as default project for following commands
 export OS_PROJECT_NAME=$INPUT_PROJECTNAME
 
