@@ -1,0 +1,61 @@
+#!/bin/bash
+
+# reset previous set variables
+unset INPUT_USERNAME
+unset INPUT_PROJECT
+
+# parse parameters
+for i in "$@"
+do
+case $i in
+  --user=*)
+  INPUT_USERNAME="${i#*=}"
+  shift
+  ;;
+  --project=*)
+  INPUT_PROJECT="${i#*=}"
+  shift
+  ;;
+  --help*)
+  PRINT_USAGE=1
+  shift
+  ;;
+  *)
+  PRINT_USAGE=1;
+  echo "error: unknown option ${i#*}"
+  ;;
+esac
+done
+
+# print usage
+if [ ! -z ${PRINT_USAGE+1} ]; then
+  echo -e "\nUsage: './os-project-grant-access' with the following parameters:"
+  echo -e "\n --project"
+  echo -e "\tProject name for which the access for the given user or group should be granted."
+  echo -e "\n --user"
+  echo -e "\tSingle username, which will be added as member for the given project."
+  echo
+  exit 1
+fi
+
+# user name and password dialog
+if [ -z ${INPUT_USERNAME+1} ]; then
+  echo -n "Enter username: "
+  read INPUT_USERNAME
+fi
+if [ -z ${INPUT_PROJECT+1} ]; then
+  echo -n "Enter project name: "
+  read INPUT_PROJECT
+  echo
+fi
+
+openstack role add --user $INPUT_USERNAME --project $INPUT_PROJECT --user-domain $OS_USER_DOMAIN_NAME _member_
+
+if [ $? -eq 0 ]; then
+  echo -e "[OK]: Access for user '$INPUT_USERNAME' to project '$INPUT_PROJECT' granted."
+else
+  echo -e "[ERROR]: Could not grant access for user '$INPUT_USERNAME' to project '$INPUT_PROJECT'."
+  exit 1
+fi
+
+exit 0
