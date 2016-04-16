@@ -3,6 +3,7 @@
 # reset previous set username and password
 unset INPUT_USERNAME
 unset INPUT_PASSWORD
+unset INPUT_PROJECT
 
 # parse parameters
 for i in "$@"
@@ -14,6 +15,10 @@ case $i in
   ;;
   --password=*)
   INPUT_PASSWORD="${i#*=}"
+  shift
+  ;;
+  --project=*)
+  INPUT_PROJECT="${i#*=}"
   shift
   ;;
   --help*)
@@ -44,13 +49,21 @@ if [ -z ${INPUT_PASSWORD+1} ]; then
   read -sr INPUT_PASSWORD
   echo
 fi
+if [ -z ${INPUT_PROJECT+1} ]; then
+  echo -n "Enter OpenStack project (optional) [shared-testing]: "
+  read INPUT_PROJECT
+  if [ -z $INPUT_PROJECT ]; then
+    INPUT_PROJECT="shared-testing"
+  fi
+fi
+
 
 echo "[OK]: Authentication temporary stored."
 
 # set openstack environment variables
 export LC_ALL=C
 export OS_IDENTITY_API_VERSION=3
-export OS_PROJECT_NAME='shared-testing'
+export OS_PROJECT_NAME=$INPUT_PROJECT
 export OS_USER_DOMAIN_NAME='lsinfo3'
 export OS_PROJECT_DOMAIN_NAME='lsinfo3'
 export OS_USERNAME=$INPUT_USERNAME
