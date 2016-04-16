@@ -12,7 +12,7 @@ for i in "$@"
 do
 case $i in
   --project=*)
-  INPUT_PROJECTNAME="${i#*=}"
+  INPUT_PROJECT="${i#*=}"
   shift
   ;;
   --no-default-firewall*)
@@ -44,38 +44,38 @@ if [ ! -z ${PRINT_USAGE+1} ]; then
 fi
 
 # Project name dialog
-if [ -z ${INPUT_PROJECTNAME+1} ]; then
+if [ -z ${INPUT_PROJECT+1} ]; then
   echo -n "Enter new project name: "
-  read INPUT_PROJECTNAME
+  read INPUT_PROJECT
 fi
 
 # Check for project name prefix
-if [[ $INPUT_PROJECTNAME != user-* ]] && [[ $INPUT_PROJECTNAME != shared-* ]]; then
+if [[ $INPUT_PROJECT != user-* ]] && [[ $INPUT_PROJECT != shared-* ]]; then
   echo "It is required that your project name starts with 'user-' or 'shared-'."
   echo "Run './os-project-create --help' for additional information."
   exit 1
 fi
 
 # Create project by calling the OpenStack API
-PROJECT=`openstack project create --domain $OS_PROJECT_DOMAIN_NAME --format json $INPUT_PROJECTNAME`
+PROJECT=`openstack project create --domain $OS_PROJECT_DOMAIN_NAME --format json $INPUT_PROJECT`
 if [ $? -eq 0 ]; then
-  echo -e "[OK]: Project '$INPUT_PROJECTNAME' successfully created."
+  echo -e "[OK]: Project '$INPUT_PROJECT' successfully created."
 else
-  echo -e "[ERROR]: Project '$INPUT_PROJECTNAME' could not be created."
+  echo -e "[ERROR]: Project '$INPUT_PROJECT' could not be created."
   exit 1
 fi
 #echo $PROJECT
 
 # grant access to newly created project for current user
-./os-project-grant-access --user=$OS_USERNAME --project=$INPUT_PROJECTNAME
+./os-project-grant-access --user=$OS_USERNAME --project=$INPUT_PROJECT
 
 # set quota: 8 GB RAM
-openstack quota set --ram 8192 $INPUT_PROJECTNAME
+openstack quota set --ram 8192 $INPUT_PROJECT
 # set quota: 40 GB HDD
-openstack quota set --gigabytes 40 $INPUT_PROJECTNAME
+openstack quota set --gigabytes 40 $INPUT_PROJECT
 
 # export created project as default project for following commands
-export OS_PROJECT_NAME=$INPUT_PROJECTNAME
+export OS_PROJECT_NAME=$INPUT_PROJECT
 
 if [ -z ${INPUT_NO_DEFAULT_FIREWALL+1} ]; then
   # read id from default security group and add some rules
@@ -85,6 +85,10 @@ if [ -z ${INPUT_NO_DEFAULT_FIREWALL+1} ]; then
   openstack security group rule create --proto udp --src-ip 0.0.0.0/0 --dst-port 0 $DEFAULT_SECURITY_GROUP_ID
   echo -e "[OK]: Firewall rules to allow all ICMP, TCP and UDP traffic successfully created."
 fi
+
+
+
+
 
 echo
 
