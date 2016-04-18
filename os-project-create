@@ -71,8 +71,11 @@ fi
 
 # set quota: 8 GB RAM
 openstack quota set --ram 8192 $INPUT_PROJECT
+echo -e "[OK]: Set total size of RAM to 8 GB."
+
 # set quota: 40 GB HDD
 openstack quota set --gigabytes 40 $INPUT_PROJECT
+echo -e "[OK]: Set total size of volumes and snapshots to 40 GB."
 
 # export created project as default project for following commands
 export OS_PROJECT_NAME=$INPUT_PROJECT
@@ -80,15 +83,20 @@ export OS_PROJECT_NAME=$INPUT_PROJECT
 if [ -z ${INPUT_NO_DEFAULT_FIREWALL+1} ]; then
   # read id from default security group and add some rules
   DEFAULT_SECURITY_GROUP_ID=`openstack security group list --format json | jq --raw-output '.[] | select(.Name=="default") | .["ID"]'`
-  openstack security group rule create --proto icmp --src-ip 0.0.0.0/0 --dst-port 0 $DEFAULT_SECURITY_GROUP_ID
-  openstack security group rule create --proto tcp --src-ip 0.0.0.0/0 --dst-port 0 $DEFAULT_SECURITY_GROUP_ID
-  openstack security group rule create --proto udp --src-ip 0.0.0.0/0 --dst-port 0 $DEFAULT_SECURITY_GROUP_ID
+  openstack security group rule create --proto icmp --src-ip 0.0.0.0/0 --dst-port 0 $DEFAULT_SECURITY_GROUP_ID > /dev/null
+  openstack security group rule create --proto tcp --src-ip 0.0.0.0/0 --dst-port 0 $DEFAULT_SECURITY_GROUP_ID > /dev/null
+  openstack security group rule create --proto udp --src-ip 0.0.0.0/0 --dst-port 0 $DEFAULT_SECURITY_GROUP_ID > /dev/null
   echo -e "[OK]: Firewall rules to allow all ICMP, TCP and UDP traffic successfully created."
 fi
 
-
-
-
+# create internal network with subnet, one router and nat
+openstack network create ${OS_PROJECT_NAME}-net01 > /dev/null
+openstack subnet pool create --pool-prefix 192.168.200.0/24 ${OS_PROJECT_NAME}-subnetpool01 > /dev/null
+openstack subnet create --network ${OS_PROJECT_NAME}-net01 --subnet-pool ${OS_PROJECT_NAME}-subnetpool01 --prefix-length 24 ${OS_PROJECT_NAME}-subnet01 > /dev/null
+openstack router create ${OS_PROJECT_NAME}-rt01 > /dev/null
+openstack router add subnet ${OS_PROJECT_NAME}-rt01 ${OS_PROJECT_NAME}-subnet01 > /dev/null
+neutron router-gateway-set ${OS_PROJECT_NAME}-rt01 net04_ext > /dev/null
+echo -e "[OK]: Internal network with one subnet, one router and NAT configuration created."
 
 echo
 
