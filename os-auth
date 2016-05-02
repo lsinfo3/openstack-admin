@@ -4,6 +4,7 @@
 unset INPUT_USERNAME
 unset INPUT_PASSWORD
 unset INPUT_PROJECT
+unset PRINT_USAGE
 
 # parse parameters
 for i in "$@"
