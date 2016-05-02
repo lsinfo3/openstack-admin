@@ -32,55 +32,52 @@ case $i in
 esac
 done
 
-# print usage
 if [ ! -z ${PRINT_USAGE+1} ]; then
+  # print usage
   echo "Usage: source os-auth --user=myuser --password=mypassword"
   echo "If no user and password parameter is given, the script will promt for these values."
-  exit 1
-fi
-
-# user name and password dialog
-if [ -z ${INPUT_USERNAME+1} ]; then
-  echo -n "Enter OpenStack username (LS3-LDAP): "
-  read INPUT_USERNAME
-fi
-if [ -z ${INPUT_PASSWORD+1} ]; then
-  echo -n "Enter OpenStack password (hidden input): "
-  read -sr INPUT_PASSWORD
-  echo
-fi
-if [ -z ${INPUT_PROJECT+1} ]; then
-  echo -n "Enter OpenStack project (optional) [shared-testing]: "
-  read INPUT_PROJECT
-  if [ -z $INPUT_PROJECT ]; then
-    INPUT_PROJECT="shared-testing"
+else
+  # user name and password dialog
+  if [ -z ${INPUT_USERNAME+1} ]; then
+    echo -n "Enter OpenStack username (LS3-LDAP): "
+    read INPUT_USERNAME
   fi
+  if [ -z ${INPUT_PASSWORD+1} ]; then
+    echo -n "Enter OpenStack password (hidden input): "
+    read -sr INPUT_PASSWORD
+    echo
+  fi
+  if [ -z ${INPUT_PROJECT+1} ]; then
+    echo -n "Enter OpenStack project (optional) [shared-testing]: "
+    read INPUT_PROJECT
+    if [ -z $INPUT_PROJECT ]; then
+      INPUT_PROJECT="shared-testing"
+    fi
+  fi
+
+  echo "[OK]: Authentication temporary stored."
+
+  # set openstack environment variables
+  export LC_ALL=C
+  export OS_IDENTITY_API_VERSION=3
+  export OS_PROJECT_NAME=$INPUT_PROJECT
+  export OS_USER_DOMAIN_NAME='lsinfo3'
+  export OS_PROJECT_DOMAIN_NAME='lsinfo3'
+  export OS_USERNAME=$INPUT_USERNAME
+  export OS_PASSWORD=$INPUT_PASSWORD
+  export OS_AUTH_URL='https://ls3cloud1.informatik.uni-wuerzburg.de:5000/v3/'
+  export OS_AUTH_STRATEGY='keystone'
+  export OS_REGION_NAME='RegionOne'
+  export OS_CACERT='ls3cloud1.pem'
+  export CINDER_ENDPOINT_TYPE='public'
+  export GLANCE_ENDPOINT_TYPE='public'
+  export KEYSTONE_ENDPOINT_TYPE='public'
+  export NOVA_ENDPOINT_TYPE='public'
+  export NEUTRON_ENDPOINT_TYPE='public'
+  export OS_ENDPOINT_TYPE='public'
+  export OS_INTERFACE='public'
+  export MURANO_REPO_URL='http://storage.apps.openstack.org/'
+
+  # this is required to export aliases for other scripts
+  shopt -s expand_aliases
 fi
-
-
-echo "[OK]: Authentication temporary stored."
-
-# set openstack environment variables
-export LC_ALL=C
-export OS_IDENTITY_API_VERSION=3
-export OS_PROJECT_NAME=$INPUT_PROJECT
-export OS_USER_DOMAIN_NAME='lsinfo3'
-export OS_PROJECT_DOMAIN_NAME='lsinfo3'
-export OS_USERNAME=$INPUT_USERNAME
-export OS_PASSWORD=$INPUT_PASSWORD
-export OS_AUTH_URL='https://ls3cloud1.informatik.uni-wuerzburg.de:5000/v3/'
-export OS_AUTH_STRATEGY='keystone'
-export OS_REGION_NAME='RegionOne'
-export OS_CACERT='ls3cloud1.pem'
-export CINDER_ENDPOINT_TYPE='public'
-export GLANCE_ENDPOINT_TYPE='public'
-export KEYSTONE_ENDPOINT_TYPE='public'
-export NOVA_ENDPOINT_TYPE='public'
-export NEUTRON_ENDPOINT_TYPE='public'
-export OS_ENDPOINT_TYPE='public'
-export OS_INTERFACE='public'
-export MURANO_REPO_URL='http://storage.apps.openstack.org/'
-
-# this is required to export aliases for other scripts
-shopt -s expand_aliases
-
