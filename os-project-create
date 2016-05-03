@@ -19,6 +19,14 @@ case $i in
   INPUT_NO_DEFAULT_FIREWALL=1
   shift
   ;;
+  --users=*)
+  INPUT_USER_LIST="${i#*=}"
+  shift
+  ;;
+  --groups=*)
+  INPUT_GROUP_LIST="${i#*=}"
+  shift
+  ;;
   --help*)
   PRINT_USAGE=1
   shift
@@ -56,6 +64,18 @@ if [[ $INPUT_PROJECT != user-* ]] && [[ $INPUT_PROJECT != shared-* ]]; then
   exit 1
 fi
 
+# Users which should have access to the new project
+if [ -z ${INPUT_USER_LIST+1} ]; then
+  echo -n "Enter users (comma separated, no whitespace), which should have access to the project: "
+  read INPUT_USER_LIST
+fi
+
+# Groups which should have acces to the new project
+if [ -z ${INPUT_GROUP_LIST+1} ]; then
+  echo -n "Enter groups (comma separated, no whitespace), which should have access to the project: "
+  read INPUT_GROUP_LIST
+fi
+
 # Create project by calling the OpenStack API
 PROJECT=`openstack project create --domain $OS_PROJECT_DOMAIN_NAME --format json $INPUT_PROJECT`
 if [ $? -eq 0 ]; then
@@ -67,7 +87,13 @@ fi
 #echo $PROJECT
 
 # grant access to newly created project for current user
-./os-project-grant-access --user=$OS_USERNAME --project=$INPUT_PROJECT
+./os-project-access-grant --user=$OS_USERNAME --project=$INPUT_PROJECT
+
+# grant access to newly created project for additional users
+./os-project-access-grant --user=$INPUT_USER_LIST --project=$INPUT_PROJECT
+
+# grant access to newly created project for additional groups
+./os-project-access-grant --group=$INPUT_GROUP_LIST --project=$INPUT_PROJECT
 
 # set quota: 8 GB RAM
 openstack quota set --ram 8192 $INPUT_PROJECT
