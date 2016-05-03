@@ -1,0 +1,92 @@
+#!/bin/bash
+
+# reset previous set variables
+unset INPUT_USER_LIST
+unset INPUT_GROUP_LIST
+
+# parse parameters
+for i in "$@"
+do
+case $i in
+  --user=*)
+  INPUT_USER_LIST="${i#*=}"
+  shift
+  ;;
+  --group=*)
+  INPUT_GROUP_LIST="${i#*=}"
+  shift
+  ;;
+  --project=*)
+  INPUT_PROJECT="${i#*=}"
+  shift
+  ;;
+  --help*)
+  PRINT_USAGE=1
+  shift
+  ;;
+  *)
+  PRINT_USAGE=1;
+  echo "error: unknown option ${i#*}"
+  ;;
+esac
+done
+
+# print usage
+if [ ! -z ${PRINT_USAGE+1} ]; then
+  echo -e "\nUsage: './os-project-grant-access' with the following parameters:"
+  echo -e "\n --project"
+  echo -e "\tProject name for which the access for the given user or group should be granted."
+  echo -e "\n --user"
+  echo -e "\tList of comma separated user names, which will be added as members for the given project."
+  echo -e "\n --group"
+  echo -e "\tList of comma separated group names, which will be added as member for the given project."
+  echo
+  exit 1
+fi
+
+# dialog for user name
+if [ -z ${INPUT_USER_LIST+1} ]; then
+  echo -n "Enter comma separated list of user names: "
+  read INPUT_USER_LIST
+fi
+
+# dialog for group name
+if [ -z ${INPUT_GROUP_LIST+1} ]; then
+  echo -n "Enter comma separated list of group names: "
+  read INPUT_GROUP_LIST
+fi
+
+# dialog for project name
+if [ -z ${INPUT_PROJECT+1} ]; then
+  echo -n "Enter project name: "
+  read INPUT_PROJECT
+  echo
+fi
+
+# grant access for each user in list
+arr=$(echo $INPUT_USER_LIST | tr "," "\n")
+for USER in $arr
+do
+  openstack role add --user $USER --project $INPUT_PROJECT --user-domain $OS_USER_DOMAIN_NAME _member_
+  if [ $? -eq 0 ]; then
+    echo -e "[OK]: Access for user '$USER' to project '$INPUT_PROJECT' granted."
+  else
+    echo -e "[ERROR]: Could not grant access for user '$USER' to project '$INPUT_PROJECT'."
+    exit 1
+  fi
+done
+
+# grant access for each group in list
+arr=$(echo $INPUT_GROUP_LIST | tr "," "\n")
+for GROUP in $arr
+do
+  openstack role add --group $GROUP --project $INPUT_PROJECT --group-domain $OS_USER_DOMAIN_NAME _member_
+  if [ $? -eq 0 ]; then
+    echo -e "[OK]: Access for group '$GROUP' to project '$INPUT_PROJECT' granted."
+  else
+    echo -e "[ERROR]: Could not grant access for GROUP '$GROUP' to project '$INPUT_PROJECT'."
+    exit 1
+  fi
+done
+
+exit 0
