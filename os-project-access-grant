@@ -1,9 +1,5 @@
 #!/bin/bash
 
-# reset previous set variables
-unset INPUT_USER_LIST
-unset INPUT_GROUP_LIST
-
 # parse parameters
 for i in "$@"
 do
@@ -45,13 +41,13 @@ if [ ! -z ${PRINT_USAGE+1} ]; then
 fi
 
 # dialog for user name
-if [ -z ${INPUT_USER_LIST+1} ]; then
+if [ -z ${INPUT_USER_LIST+1} ] && [ -z ${INPUT_GROUP_LIST+1} ]; then
   echo -n "Enter comma separated list of user names: "
   read INPUT_USER_LIST
 fi
 
 # dialog for group name
-if [ -z ${INPUT_GROUP_LIST+1} ]; then
+if [ -z ${INPUT_GROUP_LIST+1} ] && [ -z $INPUT_USER_LIST ]; then
   echo -n "Enter comma separated list of group names: "
   read INPUT_GROUP_LIST
 fi
