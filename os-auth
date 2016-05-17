@@ -84,7 +84,4 @@ else
   export OS_ENDPOINT_TYPE='public'
   export OS_INTERFACE='public'
   export MURANO_REPO_URL='http://storage.apps.openstack.org/'
-
-  # this is required to export aliases for other scripts
-  shopt -s expand_aliases
 fi
