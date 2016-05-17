@@ -90,10 +90,14 @@ fi
 ./os-project-access-grant --user=$OS_USERNAME --project=$INPUT_PROJECT
 
 # grant access to newly created project for additional users
-./os-project-access-grant --user=$INPUT_USER_LIST --project=$INPUT_PROJECT
+if [ ! -z "$INPUT_USER_LIST" ]; then
+  ./os-project-access-grant --user=$INPUT_USER_LIST --project=$INPUT_PROJECT
+fi
 
 # grant access to newly created project for additional groups
-./os-project-access-grant --group=$INPUT_GROUP_LIST --project=$INPUT_PROJECT
+if [ ! -z "$INPUT_GROUP_LIST" ]; then
+  ./os-project-access-grant --group=$INPUT_GROUP_LIST --project=$INPUT_PROJECT
+fi
 
 # set quota: 8 GB RAM
 openstack quota set --ram 8192 $INPUT_PROJECT
