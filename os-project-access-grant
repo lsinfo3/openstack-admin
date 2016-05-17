@@ -4,16 +4,16 @@
 for i in "$@"
 do
 case $i in
-  --user=*)
+  --project=*)
+  INPUT_PROJECT="${i#*=}"
+  shift
+  ;;
+  --users=*)
   INPUT_USER_LIST="${i#*=}"
   shift
   ;;
-  --group=*)
+  --groups=*)
   INPUT_GROUP_LIST="${i#*=}"
-  shift
-  ;;
-  --project=*)
-  INPUT_PROJECT="${i#*=}"
   shift
   ;;
   --help*)
@@ -30,11 +30,11 @@ done
 # print usage
 if [ ! -z ${PRINT_USAGE+1} ]; then
   echo -e "\nUsage: './os-project-grant-access' with the following parameters:"
-  echo -e "\n --project"
+  echo -e "\n --project="
   echo -e "\tProject name for which the access for the given user or group should be granted."
-  echo -e "\n --user"
+  echo -e "\n --users="
   echo -e "\tList of comma separated user names, which will be added as members for the given project."
-  echo -e "\n --group"
+  echo -e "\n --groups="
   echo -e "\tList of comma separated group names, which will be added as member for the given project."
   echo
   exit 1

@@ -15,16 +15,16 @@ case $i in
   INPUT_PROJECT="${i#*=}"
   shift
   ;;
-  --no-default-firewall*)
-  INPUT_NO_DEFAULT_FIREWALL=1
-  shift
-  ;;
   --users=*)
   INPUT_USER_LIST="${i#*=}"
   shift
   ;;
   --groups=*)
   INPUT_GROUP_LIST="${i#*=}"
+  shift
+  ;;
+  --no-default-firewall*)
+  INPUT_NO_DEFAULT_FIREWALL=1
   shift
   ;;
   --help*)
@@ -41,10 +41,14 @@ done
 # Print usage
 if [ ! -z ${PRINT_USAGE+1} ]; then
   echo -e "\nUsage: './os-project-create' with the following parameters:"
-  echo -e "\n --project"
+  echo -e "\n --project="
   echo -e "\tThe desired project name. Please respect the following naming conventions for new projects:"
   echo -e "\t * User related projects: user-firstname.lastname"
   echo -e "\t * Shared projects: shared-myproject"
+  echo -e "\n --users="
+  echo -e "\tList of comma separated user names, which will be added as members for the given project."
+  echo -e "\n --groups="
+  echo -e "\tList of comma separated group names, which will be added as member for the given project."
   echo -e "\n --no-default-firewall (optional)"
   echo -e "\tPer default this script will enable all ICMP, TCP and UDP traffic to the virtual instances\n\tof this project. With this parameter the security rules will leaved untouched to deny all\n\ttraffic per default."
   echo
@@ -87,16 +91,16 @@ fi
 #echo $PROJECT
 
 # grant access to newly created project for current user
-./os-project-access-grant --user=$OS_USERNAME --project=$INPUT_PROJECT
+./os-project-access-grant --users=$OS_USERNAME --project=$INPUT_PROJECT
 
 # grant access to newly created project for additional users
 if [ ! -z "$INPUT_USER_LIST" ]; then
-  ./os-project-access-grant --user=$INPUT_USER_LIST --project=$INPUT_PROJECT
+  ./os-project-access-grant --users=$INPUT_USER_LIST --project=$INPUT_PROJECT
 fi
 
 # grant access to newly created project for additional groups
 if [ ! -z "$INPUT_GROUP_LIST" ]; then
-  ./os-project-access-grant --group=$INPUT_GROUP_LIST --project=$INPUT_PROJECT
+  ./os-project-access-grant --groups=$INPUT_GROUP_LIST --project=$INPUT_PROJECT
 fi
 
 # set quota: 8 GB RAM
