@@ -7,6 +7,13 @@ if [ -z ${OS_AUTH_URL+1} ]; then
   exit 1 
 fi
 
+which openstack > /dev/null
+if [ ! $? -eq 0 ]; then
+  echo -e "[ERROR]: OpenStack Python libraries not found. Exiting."
+  exit 1
+fi
+#
+
 # Parse parameters
 for i in "$@"
 do
