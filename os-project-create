@@ -137,6 +137,7 @@ openstack subnet create --network ${OS_PROJECT_NAME}-net01 --subnet-pool ${OS_PR
 openstack router create ${OS_PROJECT_NAME}-rt01 > /dev/null
 openstack router add subnet ${OS_PROJECT_NAME}-rt01 ${OS_PROJECT_NAME}-subnet01 > /dev/null
 neutron router-gateway-set ${OS_PROJECT_NAME}-rt01 net04_ext > /dev/null
+neutron subnet-update ${OS_PROJECT_NAME}-subnet01 --dns-nameservers list=true 132.187.0.13 > /dev/null
 echo -e "[OK]: Internal network with one subnet, one router and NAT configuration created."
 
 echo
