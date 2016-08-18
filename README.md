@@ -25,5 +25,5 @@ Usage:
 ```
 source venv/bin/activate
 source os-auth
-os-project-create
+./os-project-create
 ```
