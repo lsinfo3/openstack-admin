@@ -62,7 +62,18 @@ else
     fi
   fi
 
-  echo "[OK]: Authentication temporary stored."
+  if [ -z "${INPUT_USERNAME}" ]; then
+  	echo "Username should not be empty. Exiting"
+	return
+  fi
+  if [ -z "${INPUT_PASSWORD}" ]; then
+  	echo "Password should not be empty. Exiting"
+	return
+  fi
+  if [ -z "${INPUT_PROJECT}" ]; then
+  	echo "Project should not be empty. Exiting"
+ 	return	
+  fi
 
   # set openstack environment variables
   export LC_ALL=C
@@ -84,4 +95,16 @@ else
   export OS_ENDPOINT_TYPE='public'
   export OS_INTERFACE='public'
   export MURANO_REPO_URL='http://storage.apps.openstack.org/'
+  echo "[OK]: Authentication temporary stored."
+
+  # check whether auth was successful
+  CMD="openstack user show $OS_USERNAME 2> /dev/null | grep name"
+  RES=$(eval $CMD)
+  if [[ $RES != *${OS_USERNAME}* ]]; then
+	echo "[ERROR]: Authentification check was unsuccessful. Exiting."
+	echo "[ERROR]: Please retry!"
+	unset OS_AUTH_URL
+	return
+  fi
+  echo "[OK]: Authentication verified."
 fi
