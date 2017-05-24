@@ -55,10 +55,10 @@ else
     echo
   fi
   if [ -z ${INPUT_PROJECT+1} ]; then
-    echo -n "Enter OpenStack project (optional) [shared-testing]: "
+    echo -n "Enter OpenStack project (optional) [shared-assis-testing]: "
     read INPUT_PROJECT
     if [ -z $INPUT_PROJECT ]; then
-      INPUT_PROJECT="shared-testing"
+      INPUT_PROJECT="shared-assis-testing"
     fi
   fi
 

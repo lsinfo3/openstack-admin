@@ -40,6 +40,20 @@ if [ ! -z ${PRINT_USAGE+1} ]; then
   exit 1
 fi
 
+# check for new openstack-client version
+if [ "$(openstack --version 2>&1 | awk '{ print $2}' | awk -F'.' '{print $1}')" -lt 3 ]; then
+        echo -e "[ERROR]: OpenStack client tools version too old. Please refer to README.md and install virtualenv and requirements.txt. Exiting."
+        exit 1
+fi
+
+# check for proxy ip
+# ls3cloud1.informatik.uni-wuerzburg.de must point to proxy IP
+if [ "$(resolveip ls3cloud1.informatik.uni-wuerzburg.de -s)" != "132.187.12.42" ]; then
+        echo "[ERROR]: ls3cloud1.informatik.uni-wuerzburg.de must point to proxy IP"
+        echo "Change dns resolution to 132.187.12.42 (proxy server), otherwise auth will fail due to SSL cert issues. Exiting."
+        exit 1
+fi
+
 # dialog for user name
 if [ -z ${INPUT_USER_LIST+1} ] && [ -z ${INPUT_GROUP_LIST+1} ]; then
   echo -n "Enter comma separated list of user names: "
