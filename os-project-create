@@ -149,7 +149,7 @@ openstack network create ${OS_PROJECT_NAME}-net01 > /dev/null
 openstack subnet pool create --pool-prefix 192.168.200.0/24 ${OS_PROJECT_NAME}-subnetpool01 > /dev/null
 # 2017-05-24 I got problems since --prefix-length was not accepted :/ -> change to neutron api
 #openstack subnet create --network ${OS_PROJECT_NAME}-net01 --subnet-pool ${OS_PROJECT_NAME}-subnetpool01 --prefix-length 24 ${OS_PROJECT_NAME}-subnet01 > /dev/null
-neutron subnet-create --subnetpool ${OS_PROJECT_NAME}-subnetpool01 --prefixlen 24 --name ${OS_PROJECT_NAME}-subnet01 ${OS_PROJECT_NAME}-net01
+neutron subnet-create --subnetpool ${OS_PROJECT_NAME}-subnetpool01 --prefixlen 24 --name ${OS_PROJECT_NAME}-subnet01 ${OS_PROJECT_NAME}-net01 > /dev/null
 openstack router create ${OS_PROJECT_NAME}-rt01 > /dev/null
 openstack router add subnet ${OS_PROJECT_NAME}-rt01 ${OS_PROJECT_NAME}-subnet01 > /dev/null
 neutron router-gateway-set ${OS_PROJECT_NAME}-rt01 net04_ext > /dev/null
