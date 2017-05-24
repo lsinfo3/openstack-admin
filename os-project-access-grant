@@ -40,6 +40,32 @@ if [ ! -z ${PRINT_USAGE+1} ]; then
   exit 1
 fi
 
+# check auth credentials
+if [ -z "$OS_PROJECT_NAME" ]; then
+	echo "[ERROR]: OS_PROJECT_NAME env variable is not set. Please run \"source ./os-auth\". Please note that you have to source it, otherwise the variables are not accessible. Exiting."
+	exit 1
+fi
+if [ -z "$OS_USERNAME" ]; then
+	echo "[ERROR]: OS_USERNAME env variable is not set. Please run \"source ./os-auth\". Please note that you have to source it, otherwise the variables are not accessible. Exiting."
+	exit 1
+fi
+if [ -z "$OS_PASSWORD" ]; then
+	echo "[ERROR]: OS_PASSWORD env variable is not set. Please run \"source ./os-auth\". Please note that you have to source it, otherwise the variables are not accessible. Exiting."
+	exit 1
+fi
+if [ -z "$OS_AUTH_URL" ]; then
+	echo "[ERROR]: OS_AUTH_URL env variable is not set. Please run \"source ./os-auth\". Please note that you have to source it, otherwise the variables are not accessible. Exiting."
+	exit 1
+fi
+if [ -z "$OS_PROJECT_DOMAIN_NAME" ]; then
+	echo "[ERROR]: OS_PROJECT_DOMAIN_NAME env variable is not set. Please run \"source ./os-auth\". Please note that you have to source it, otherwise the variables are not accessible. Exiting."
+	exit 1
+fi
+if [ -z "$OS_USER_DOMAIN_NAME" ]; then
+	echo "[ERROR]: OS_USER_DOMAIN_NAME env variable is not set. Please run \"source ./os-auth\". Please note that you have to source it, otherwise the variables are not accessible. Exiting."
+	exit 1
+fi
+
 # check for new openstack-client version
 if [ "$(openstack --version 2>&1 | awk '{ print $2}' | awk -F'.' '{print $1}')" -lt 3 ]; then
         echo -e "[ERROR]: OpenStack client tools version too old. Please refer to README.md and install virtualenv and requirements.txt. Exiting."
