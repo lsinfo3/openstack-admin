@@ -13,10 +13,17 @@ if [ ! $? -eq 0 ]; then
   exit 1
 fi
 
+DNS_CMD="getent hosts ls3cloud1.informatik.uni-wuerzburg.de | awk '{ print \$1 }'"
 which getent > /dev/null
 if [ ! $? -eq 0 ]; then
-  echo -e "[ERROR]: Getent libraries not found. Needed for \"getent hosts\" command. Exiting."
-  exit 1
+  which dscacheutil > /dev/null
+  if [ ! $? -eq 0 ]; then
+    echo -e "[ERROR]: Getent libraries or dscacheutil (mac) not found. Needed for IP address resolution command. Exiting."
+    exit 1
+  else
+    # we are on a mac and have dscacheutil
+    DNS_CMD="dscacheutil -q host -a name ls3cloud1.informatik.uni-wuerzburg.de | grep ip_address | awk '{print \$2}'"
+  fi
 fi
 
 #
@@ -29,7 +36,7 @@ fi
 
 # check for proxy ip
 # ls3cloud1.informatik.uni-wuerzburg.de must point to proxy IP 
-if [ "$(getent hosts ls3cloud1.informatik.uni-wuerzburg.de | awk '{ print $1 }')" != "132.187.12.42" ]; then 
+if [ "$(eval $DNS_CMD)" != "132.187.12.42" ]; then 
 	echo "[ERROR]: ls3cloud1.informatik.uni-wuerzburg.de must point to proxy IP"
 	echo "Change dns resolution to 132.187.12.42 (proxy server), otherwise auth will fail due to SSL cert issues. Exiting." 
 	exit 1
