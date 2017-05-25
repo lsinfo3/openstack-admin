@@ -6,6 +6,22 @@ unset INPUT_PASSWORD
 unset INPUT_PROJECT
 unset PRINT_USAGE
 
+# check whether the script is sourced or not
+([[ -n $ZSH_EVAL_CONTEXT && $ZSH_EVAL_CONTEXT =~ :file$ ]] || 
+ [[ -n $KSH_VERSION && $(cd "$(dirname -- "$0")" &&
+    printf '%s' "${PWD%/}/")$(basename -- "$0") != "${.sh.file}" ]] || 
+ [[ -n $BASH_VERSION && $0 != "$BASH_SOURCE" ]]) && SOURCED=1 || SOURCED=0
+if [[ $SOURCED -eq 0 ]]; then
+  echo "[ERROR]: Please \"source\" the script with \"source ./os-auth\". Exiting."
+  exit 1
+fi
+
+# check for new openstack-client version
+if [ "$(openstack --version 2>&1 | awk '{ print $2}' | awk -F'.' '{print $1}')" -lt 3 ]; then
+  echo -e "[ERROR]: OpenStack client tools version too old. Please refer to README.md and install virtualenv and requirements.txt. Exiting."
+  return
+fi
+
 # parse parameters
 for i in "$@"
 do
