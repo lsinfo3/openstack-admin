@@ -124,8 +124,8 @@ if [ -z ${INPUT_PROJECT+1} ]; then
   read INPUT_PROJECT
 fi
 
+# Check whether project exists
 exists=$(openstack project list | grep ${INPUT_PROJECT})
-
 if [[ ! -z $exists ]]; then
     echo "This project already exists. Please delete with ./os-project-delete before proceeding. Exit."
     exit 1
