@@ -113,7 +113,7 @@ else
   export MURANO_REPO_URL='http://storage.apps.openstack.org/'
   echo "[OK]: Authentication temporary stored."
 
-  # check whether auth was successful
+  # check whether admin auth was successful
   CMD="openstack user show $OS_USERNAME 2> /dev/null | grep name"
   RES=$(eval $CMD)
   if [[ $RES != *${OS_USERNAME}* ]]; then
@@ -123,4 +123,12 @@ else
 	return
   fi
   echo "[OK]: Authentication verified."
+
+  ADMIN=$(openstack role list | grep admin)
+  if [[ -n "$ADMIN" ]]; then
+  	RED='\033[0;31m'
+	NC='\033[0m'
+  	echo -e "[OK]: ${RED}Admin rights${NC} (${OS_USERNAME}@$OS_PROJECT_NAME)"
+  fi
+
 fi
