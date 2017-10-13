@@ -113,10 +113,10 @@ else
   export MURANO_REPO_URL='http://storage.apps.openstack.org/'
   echo "[OK]: Authentication temporary stored."
 
-  # check whether admin auth was successful
-  CMD="openstack user show $OS_USERNAME 2> /dev/null | grep name"
+  # check whether auth was successful
+  CMD="openstack project list 2> /dev/null"
   RES=$(eval $CMD)
-  if [[ $RES != *${OS_USERNAME}* ]]; then
+  if [[ -z "$RES" ]]; then
 	echo "[ERROR]: Authentification check was unsuccessful. Exiting."
 	echo "[ERROR]: Please retry!"
 	unset OS_AUTH_URL
@@ -124,11 +124,16 @@ else
   fi
   echo "[OK]: Authentication verified."
 
-  ADMIN=$(openstack role list | grep admin)
+  ADMIN=$(openstack role list 2> /dev/null | grep admin) 
+  RED='\033[0;31m'
+  YELLOW='\033[0;33m'
+  NC='\033[0m'
   if [[ -n "$ADMIN" ]]; then
   	RED='\033[0;31m'
 	NC='\033[0m'
-  	echo -e "[OK]: ${RED}Admin rights${NC} (${OS_USERNAME}@$OS_PROJECT_NAME)"
+  	echo -e "[OK]: ${RED}Admin rights${NC} -> you can create/delete projects.\t(${OS_USERNAME}@$OS_PROJECT_NAME)"
+  else
+  	echo -e "[OK]: Normal ${YELLOW}member${NC} rights -> you can change project details, but cannot create/delete projects.\t(${OS_USERNAME}@$OS_PROJECT_NAME)"
   fi
 
 fi
