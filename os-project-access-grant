@@ -20,6 +20,10 @@ case $i in
   PRINT_USAGE=1
   shift
   ;;
+  --admin*)
+  ADMIN=1
+  shift
+  ;;
   *)
   PRINT_USAGE=1;
   echo "error: unknown option ${i#*}"
@@ -36,6 +40,8 @@ if [ ! -z ${PRINT_USAGE+1} ]; then
   echo -e "\tList of comma separated user names, which will be added as members for the given project."
   echo -e "\n --groups="
   echo -e "\tList of comma separated group names, which will be added as member for the given project."
+  echo -e "\n --admin"
+  echo -e "\tGrants user or group admin rights to the project."
   echo
   exit 1
 fi
@@ -127,7 +133,10 @@ fi
 arr=$(echo $INPUT_USER_LIST | tr "," "\n")
 for USER in $arr
 do
-  openstack role add --user $USER --project $INPUT_PROJECT --user-domain $OS_USER_DOMAIN_NAME _member_
+    openstack role add --user $USER --project $INPUT_PROJECT --user-domain $OS_USER_DOMAIN_NAME _member_
+    if [[ "$ADMIN" -eq "1" ]]; then
+	    openstack role add --user $USER --project $INPUT_PROJECT --user-domain $OS_USER_DOMAIN_NAME admin
+    fi
   if [ $? -eq 0 ]; then
     echo -e "[OK]: Access for user '$USER' to project '$INPUT_PROJECT' granted."
   else
@@ -140,7 +149,10 @@ done
 arr=$(echo $INPUT_GROUP_LIST | tr "," "\n")
 for GROUP in $arr
 do
-  openstack role add --group $GROUP --project $INPUT_PROJECT --group-domain $OS_USER_DOMAIN_NAME _member_
+    openstack role add --group $GROUP --project $INPUT_PROJECT --group-domain $OS_USER_DOMAIN_NAME _member_
+    if [[ "$ADMIN" -eq "1" ]]; then
+	    openstack role add --group $GROUP --project $INPUT_PROJECT --group-domain $OS_USER_DOMAIN_NAME admin
+    fi
   if [ $? -eq 0 ]; then
     echo -e "[OK]: Access for group '$GROUP' to project '$INPUT_PROJECT' granted."
   else

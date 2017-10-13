@@ -124,13 +124,6 @@ if [ -z ${INPUT_PROJECT+1} ]; then
   read INPUT_PROJECT
 fi
 
-exists=$(openstack project list | grep ${INPUT_PROJECT})
-
-if [[ ! -z $exists ]]; then
-    echo "This project already exists. Please delete with ./os-project-delete before proceeding. Exit."
-    exit 1
-fi
-
 # Check for project name prefix
 if [[ $INPUT_PROJECT != user-* ]] && [[ $INPUT_PROJECT != shared-* ]]; then
   echo "It is required that your project name starts with 'user-' or 'shared-'."
@@ -138,78 +131,43 @@ if [[ $INPUT_PROJECT != user-* ]] && [[ $INPUT_PROJECT != shared-* ]]; then
   exit 1
 fi
 
-# Users which should have access to the new project
-if [ -z ${INPUT_USER_LIST+1} ]; then
-  echo -n "Enter users (comma separated, no whitespace), which should have access to the project: "
-  read INPUT_USER_LIST
+# Get the project IDs
+P_ID=$(openstack project list | grep "${INPUT_PROJECT}" | cut -d'|' -f2 | tr -d ' ')
+NETWORK_ID=$(openstack network list | grep "${INPUT_PROJECT}" | cut -d'|' -f2 | tr -d ' ')
+SUBNET_ID=$(openstack subnet list | grep "${INPUT_PROJECT}" | cut -d'|' -f2 | tr -d ' ')
+ROUTER_ID=$(openstack router list | grep "${INPUT_PROJECT}" | cut -d'|' -f2 | tr -d ' ')
+SECURITY_GROUP_ID=$(openstack security group list | grep "${P_ID}" | cut -d'|' -f2 | tr -d ' ')
+SECURITY_GROUP_RULES_ID=$(openstack security group rule list | grep "${SECURITY_GROUP_ID}" | cut -d'|' -f2 | tr -d ' ')
+SUBNET_POOL_ID=$(openstack subnet pool list | grep "${INPUT_PROJECT}" | cut -d'|' -f2 | tr -d ' ')
+
+echo "...$P_ID..."
+if [[ ${P_ID} == "" ]]; then
+    echo "Project $INPUT_PROJECT does not exist!"
+    exit 1
 fi
 
-# Groups which should have acces to the new project
-if [ -z ${INPUT_GROUP_LIST+1} ]; then
-  echo -n "Enter groups (comma separated, no whitespace), which should have access to the project: "
-  read INPUT_GROUP_LIST
-fi
+# Remove subnet from router
+openstack router remove subnet ${ROUTER_ID} ${SUBNET_ID}
 
-# Create project by calling the OpenStack API
-PROJECT=`openstack project create --domain $OS_PROJECT_DOMAIN_NAME --format json $INPUT_PROJECT`
-if [ $? -eq 0 ]; then
-  echo -e "[OK]: Project '$INPUT_PROJECT' successfully created."
-else
-  echo -e "[ERROR]: Project '$INPUT_PROJECT' could not be created."
-  exit 1
-fi
-#echo $PROJECT
+# Delete the securty groups
+openstack security group rule delete ${SECURITY_GROUP_RULES_ID}
+openstack security group delete ${SECURITY_GROUP_ID}
 
-# grant access to newly created project for current user
-./os-project-access-grant --users=$OS_USERNAME --project=$INPUT_PROJECT
+# Delete the subnet
+openstack subnet delete ${SUBNET_ID}
 
-# grant access to newly created project for additional users
-if [ ! -z "$INPUT_USER_LIST" ]; then
-  ./os-project-access-grant --users=$INPUT_USER_LIST --project=$INPUT_PROJECT
-fi
+# Delete the subnet pool
+openstack subnet pool delete ${SUBNET_POOL_ID}
 
-# grant access to newly created project for additional groups
-if [ ! -z "$INPUT_GROUP_LIST" ]; then
-    ./os-project-access-grant --groups=$INPUT_GROUP_LIST --project=$INPUT_PROJECT
-fi
+# Delete the network
+openstack network delete ${NETWORK_ID}
 
-# Add gen-admin as admin group to all projects
-./os-project-access-grant --groups=gen-admins --project=$INPUT_PROJECT --admin
+# Delete the router
+openstack router delete ${ROUTER_ID}
 
-# set quota: 16 GB RAM
-openstack quota set --ram 16384 $INPUT_PROJECT
-echo -e "[OK]: Set total size of RAM to 16 GB."
+# Delete the project
+openstack project delete ${P_ID}
 
-# set quota: 100 GB HDD
-openstack quota set --gigabytes 100 $INPUT_PROJECT
-echo -e "[OK]: Set total size of volumes and snapshots to 100 GB."
-
-# export created project as default project for following commands
-export OS_PROJECT_NAME=$INPUT_PROJECT
-
-
-# This is probably not needed with the new OpenStack default security rules. lets see...
-#if [ -z ${INPUT_NO_DEFAULT_FIREWALL+1} ]; then
-#  # read id from default security group and add some rules
-#  DEFAULT_SECURITY_GROUP_ID=`openstack security group list --format json | jq --raw-output '.[] | select(.Name=="default") | .["ID"]'`
-#  openstack security group rule create --protocol icmp --remote-ip 0.0.0.0/0 $DEFAULT_SECURITY_GROUP_ID > /dev/null
-#  openstack security group rule create --protocol tcp --remote-ip 0.0.0.0/0 $DEFAULT_SECURITY_GROUP_ID > /dev/null
-#  openstack security group rule create --protocol udp --remote-ip 0.0.0.0/0 $DEFAULT_SECURITY_GROUP_ID > /dev/null
-#  echo -e "[OK]: Firewall rules to allow all ICMP, TCP and UDP traffic successfully created."
-#fi
-
-# create internal network with subnet, one router and nat
-openstack network create ${OS_PROJECT_NAME}-net01 > /dev/null
-openstack subnet pool create --pool-prefix 192.168.200.0/24 ${OS_PROJECT_NAME}-subnetpool01 > /dev/null
-#openstack subnet create --network ${OS_PROJECT_NAME}-net01 --subnet-pool ${OS_PROJECT_NAME}-subnetpool01 --prefix-length 24 ${OS_PROJECT_NAME}-subnet01 > /dev/null
-# 2017-05-24 I got problems since --prefix-length was not accepted :/ -> change to neutron api
-neutron subnet-create --subnetpool ${OS_PROJECT_NAME}-subnetpool01 --prefixlen 24 --name ${OS_PROJECT_NAME}-subnet01 ${OS_PROJECT_NAME}-net01 > /dev/null
-openstack router create ${OS_PROJECT_NAME}-rt01 > /dev/null
-openstack router add subnet ${OS_PROJECT_NAME}-rt01 ${OS_PROJECT_NAME}-subnet01 > /dev/null
-neutron router-gateway-set ${OS_PROJECT_NAME}-rt01 admin_floating_net > /dev/null
-neutron subnet-update ${OS_PROJECT_NAME}-subnet01 --dns-nameservers list=true 132.187.0.13 > /dev/null
-echo -e "[OK]: Internal network with one subnet, one router and NAT configuration created."
-
-echo
+echo "Done"
 
 exit 0
