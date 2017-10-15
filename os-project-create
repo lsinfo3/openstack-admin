@@ -188,15 +188,27 @@ echo -e "[OK]: Set total size of volumes and snapshots to 100 GB."
 export OS_PROJECT_NAME=$INPUT_PROJECT
 
 
-# This is probably not needed with the new OpenStack default security rules. lets see...
-#if [ -z ${INPUT_NO_DEFAULT_FIREWALL+1} ]; then
-#  # read id from default security group and add some rules
-#  DEFAULT_SECURITY_GROUP_ID=`openstack security group list --format json | jq --raw-output '.[] | select(.Name=="default") | .["ID"]'`
-#  openstack security group rule create --protocol icmp --remote-ip 0.0.0.0/0 $DEFAULT_SECURITY_GROUP_ID > /dev/null
-#  openstack security group rule create --protocol tcp --remote-ip 0.0.0.0/0 $DEFAULT_SECURITY_GROUP_ID > /dev/null
-#  openstack security group rule create --protocol udp --remote-ip 0.0.0.0/0 $DEFAULT_SECURITY_GROUP_ID > /dev/null
-#  echo -e "[OK]: Firewall rules to allow all ICMP, TCP and UDP traffic successfully created."
-#fi
+# flo 2017-10-15: Adding firewall rules to allow external access. 
+# Current default rules are:
+# 	1) egress IPv6 ->> any
+#	2) egress IPv4 ->> any
+#	3) igress IPv4 only from clients within the local VM network (see, remote security group; default = local VM network)
+#	4) igress IPv6 only from clients within the local VM network (see, remote security group; default = local VM network)
+# => Missing access from other clients from outside to VMs for icmp, tcp, and udp
+ADMIN=$(openstack role list 2> /dev/null | grep admin) 
+if [ -z ${INPUT_NO_DEFAULT_FIREWALL+1} ]; then
+  # read id from default security group and add some rules
+  DEFAULT_SECURITY_GROUP_ID=""
+  if [[ -n "$ADMIN" ]]; then
+	  DEFAULT_SECURITY_GROUP_ID=`openstack security group list --format json --project $INPUT_PROJECT --project-domain lsinfo3 | jq --raw-output '.[] | select(.Name=="default") | .["ID"]'`
+  else
+	  DEFAULT_SECURITY_GROUP_ID=`openstack security group list --format json | jq --raw-output '.[] | select(.Name=="default") | .["ID"]'`
+  fi
+  openstack security group rule create --ingress --protocol icmp --remote-ip 0.0.0.0/0 $DEFAULT_SECURITY_GROUP_ID > /dev/null
+  openstack security group rule create --ingress --protocol tcp --remote-ip 0.0.0.0/0 $DEFAULT_SECURITY_GROUP_ID > /dev/null
+  openstack security group rule create --ingress --protocol udp --remote-ip 0.0.0.0/0 $DEFAULT_SECURITY_GROUP_ID > /dev/null
+  echo -e "[OK]: Firewall rules to allow all ICMP, TCP and UDP traffic successfully created."
+fi
 
 # create internal network with subnet, one router and nat
 openstack network create ${OS_PROJECT_NAME}-net01 > /dev/null
