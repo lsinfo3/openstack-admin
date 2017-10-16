@@ -147,26 +147,40 @@ if [[ ${P_ID} == "" ]]; then
 fi
 
 # Remove subnet from router
-openstack router remove subnet ${ROUTER_ID} ${SUBNET_ID}
+if [[ ${ROUTER_ID} != "" && ${SUBNET_ID} != "" ]]; then
+    openstack router remove subnet ${ROUTER_ID} ${SUBNET_ID}
+fi
 
 # Delete the securty groups
-openstack security group rule delete ${SECURITY_GROUP_RULES_ID}
-openstack security group delete ${SECURITY_GROUP_ID}
+if [[ ${SECURITY_GROUP_RULES_ID} != "" && ${SECURITY_GROUP_ID} != "" ]]; then
+    openstack security group rule delete ${SECURITY_GROUP_RULES_ID}
+    openstack security group delete ${SECURITY_GROUP_ID}
+fi
 
 # Delete the subnet
-openstack subnet delete ${SUBNET_ID}
+if [[ ${SUBNET_ID} != "" ]]; then
+    openstack subnet delete ${SUBNET_ID}
+fi
 
 # Delete the subnet pool
-openstack subnet pool delete ${SUBNET_POOL_ID}
+if [[ ${SUBNET_POOL_ID} != "" ]]; then
+    openstack subnet pool delete ${SUBNET_POOL_ID}
+fi
 
 # Delete the network
-openstack network delete ${NETWORK_ID}
+if [[ ${NETWORK_ID} != "" ]]; then
+    openstack network delete ${NETWORK_ID}
+fi
 
 # Delete the router
-openstack router delete ${ROUTER_ID}
+if [[ ${ROUTER_ID} != "" ]]; then
+    openstack router delete ${ROUTER_ID}
+fi
 
 # Delete the project
-openstack project delete ${P_ID}
+if [[ ${PROJECT_ID} != "" ]]; then
+    openstack project delete ${P_ID}
+fi
 
 echo "Done"
 
