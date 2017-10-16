@@ -192,8 +192,8 @@ export OS_PROJECT_NAME=$INPUT_PROJECT
 # Current default rules are:
 # 	1) egress IPv6 ->> any
 #	2) egress IPv4 ->> any
-#	3) igress IPv4 only from clients within the local VM network (see, remote security group; default = local VM network)
-#	4) igress IPv6 only from clients within the local VM network (see, remote security group; default = local VM network)
+#	3) ingress IPv4 only from clients within the local VM network (see, remote security group; default = local VM network)
+#	4) ingress IPv6 only from clients within the local VM network (see, remote security group; default = local VM network)
 # => Missing access from other clients from outside to VMs for icmp, tcp, and udp
 ADMIN=$(openstack role list 2> /dev/null | grep admin) 
 if [ -z ${INPUT_NO_DEFAULT_FIREWALL+1} ]; then
