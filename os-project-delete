@@ -68,6 +68,11 @@ if [ -z "$OS_USER_DOMAIN_NAME" ]; then
 	exit 1
 fi
 
+ADMIN=$(openstack role list 2> /dev/null | grep admin) 
+if [[ -z "$ADMIN" ]]; then
+	echo "[ERROR]: You do not have the administrator role. Change the project to a project where you own the admin role to delete other projects."
+	exit 1
+fi
 
 
 # Parse parameters
@@ -76,18 +81,6 @@ do
 case $i in
   --project=*)
   INPUT_PROJECT="${i#*=}"
-  shift
-  ;;
-  --users=*)
-  INPUT_USER_LIST="${i#*=}"
-  shift
-  ;;
-  --groups=*)
-  INPUT_GROUP_LIST="${i#*=}"
-  shift
-  ;;
-  --no-default-firewall*)
-  INPUT_NO_DEFAULT_FIREWALL=1
   shift
   ;;
   --help*)
@@ -103,83 +96,76 @@ done
 
 # Print usage
 if [ ! -z ${PRINT_USAGE+1} ]; then
-  echo -e "\nUsage: './os-project-create' with the following parameters:"
+  echo -e "\nUsage: './os-project-delete' with the following parameters:"
   echo -e "\n --project="
-  echo -e "\tThe desired project name. Please respect the following naming conventions for new projects:"
-  echo -e "\t * User related projects: user-firstname.lastname"
-  echo -e "\t * Shared projects: shared-myproject"
-  echo -e "\n --users="
-  echo -e "\tList of comma separated user names, which will be added as members for the given project."
-  echo -e "\n --groups="
-  echo -e "\tList of comma separated group names, which will be added as member for the given project."
-  echo -e "\n --no-default-firewall (optional)"
-  echo -e "\tPer default this script will enable all ICMP, TCP and UDP traffic to the virtual instances\n\tof this project. With this parameter the security rules will leaved untouched to deny all\n\ttraffic per default."
+  echo -e "\tThe desired project name."
   echo
   exit 1
 fi
 
 # Project name dialog
 if [ -z ${INPUT_PROJECT+1} ]; then
-  echo -n "Enter new project name: "
+  echo -n "Enter project name: "
   read INPUT_PROJECT
 fi
 
-# Check for project name prefix
-if [[ $INPUT_PROJECT != user-* ]] && [[ $INPUT_PROJECT != shared-* ]]; then
-  echo "It is required that your project name starts with 'user-' or 'shared-'."
-  echo "Run './os-project-create --help' for additional information."
-  exit 1
-fi
-
 # Get the project IDs
-P_ID=$(openstack project list | grep "${INPUT_PROJECT}" | cut -d'|' -f2 | tr -d ' ')
-NETWORK_ID=$(openstack network list | grep "${INPUT_PROJECT}" | cut -d'|' -f2 | tr -d ' ')
-SUBNET_ID=$(openstack subnet list | grep "${INPUT_PROJECT}" | cut -d'|' -f2 | tr -d ' ')
-ROUTER_ID=$(openstack router list | grep "${INPUT_PROJECT}" | cut -d'|' -f2 | tr -d ' ')
-SECURITY_GROUP_ID=$(openstack security group list | grep "${P_ID}" | cut -d'|' -f2 | tr -d ' ')
-SECURITY_GROUP_RULES_ID=$(openstack security group rule list | grep "${SECURITY_GROUP_ID}" | cut -d'|' -f2 | tr -d ' ')
-SUBNET_POOL_ID=$(openstack subnet pool list | grep "${INPUT_PROJECT}" | cut -d'|' -f2 | tr -d ' ')
-
-echo "...$P_ID..."
+P_ID=$(openstack project list | grep " ${INPUT_PROJECT} " | cut -d'|' -f2 | tr -d ' ')  # flo: use spaces to exactly match project name
 if [[ ${P_ID} == "" ]]; then
     echo "Project $INPUT_PROJECT does not exist!"
     exit 1
 fi
+NETWORK_ID=$(openstack network list | grep " ${INPUT_PROJECT}-net01" | cut -d'|' -f2 | tr -d ' ')
+SUBNET_ID=$(openstack subnet list | grep " ${INPUT_PROJECT}-subnet01" | cut -d'|' -f2 | tr -d ' ')
+ROUTER_ID=$(openstack router list | grep " ${INPUT_PROJECT}-rt01" | cut -d'|' -f2 | tr -d ' ')
+SECURITY_GROUP_ID=$(openstack security group list --project ${INPUT_PROJECT} | grep "${P_ID}" | cut -d'|' -f2 | tr -d ' ')
+SECURITY_GROUP_RULES_ID=$(openstack security group rule list | grep " ${SECURITY_GROUP_ID} " | cut -d'|' -f2 | tr -d ' ')
+SUBNET_POOL_ID=$(openstack subnet pool list | grep " ${INPUT_PROJECT}-subnetpool01" | cut -d'|' -f2 | tr -d ' ')
+
+# DEBUG
+#echo "Found project with ID >$P_ID< and network >$NETWORK_ID< with subnet id >$SUBNET_ID< and router >$ROUTER_ID<, security group id >$SECURITY_GROUP_ID<, rules ids >$SECURITY_GROUP_RULES_ID< and subnet pool id >$SUBNET_POOL_ID<"
 
 # Remove subnet from router
 if [[ ${ROUTER_ID} != "" && ${SUBNET_ID} != "" ]]; then
     openstack router remove subnet ${ROUTER_ID} ${SUBNET_ID}
+    echo -e "[OK]: Removed subnet from network."
 fi
 
 # Delete the securty groups
 if [[ ${SECURITY_GROUP_RULES_ID} != "" && ${SECURITY_GROUP_ID} != "" ]]; then
     openstack security group rule delete ${SECURITY_GROUP_RULES_ID}
     openstack security group delete ${SECURITY_GROUP_ID}
+    echo -e "[OK]: Security group and associated rules deleted."
 fi
 
 # Delete the subnet
 if [[ ${SUBNET_ID} != "" ]]; then
     openstack subnet delete ${SUBNET_ID}
+    echo -e "[OK]: Subnet deleted."
 fi
 
 # Delete the subnet pool
 if [[ ${SUBNET_POOL_ID} != "" ]]; then
     openstack subnet pool delete ${SUBNET_POOL_ID}
+    echo -e "[OK]: Subnet pool removed."
 fi
 
 # Delete the network
 if [[ ${NETWORK_ID} != "" ]]; then
     openstack network delete ${NETWORK_ID}
+    echo -e "[OK]: Network removed."
 fi
 
 # Delete the router
 if [[ ${ROUTER_ID} != "" ]]; then
     openstack router delete ${ROUTER_ID}
+    echo -e "[OK]: Router deleted."
 fi
 
 # Delete the project
-if [[ ${PROJECT_ID} != "" ]]; then
+if [[ ${P_ID} != "" ]]; then
     openstack project delete ${P_ID}
+    echo -e "[OK]: Project deleted."
 fi
 
 echo "Done"
